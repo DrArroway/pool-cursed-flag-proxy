@@ -305,20 +305,15 @@ function hslToRgb(h, s, l) {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-// Transparent Dual-Filter Image Engine
 function applyAtmosphericFilters(r, g, b) {
-    // 1. Apply Cloud Overcast Contrast/Luminance Gain
     if (config.cloud !== 1.0) {
         r = Math.min(255, Math.max(0, ((r - 128) * config.cloud) + 128));
         g = Math.min(255, Math.max(0, ((g - 128) * config.cloud) + 128));
         b = Math.min(255, Math.max(0, ((b - 128) * config.cloud) + 128));
     }
-
-    // 2. Apply Algae Green Channel Selective Isolation
     if (config.algae > 1.0) {
         let [h, s, l] = rgbToHsl(r, g, b);
         const hueDegree = h * 360;
-        // Strict Biological Algae Green Spectrum Pass filter
         if (hueDegree >= 65 && hueDegree <= 175) {
             s = Math.min(1.0, s * config.algae);
         }
@@ -326,6 +321,7 @@ function applyAtmosphericFilters(r, g, b) {
     }
     return [r, g, b];
 }
+
 function updateWebcamData() {
     if (currentMode !== "live") return;
     statusDiv.textContent = "Syncing with cloud proxy matrix engine...";
@@ -333,7 +329,6 @@ function updateWebcamData() {
     const img = new Image();
     img.crossOrigin = "anonymous";
     
-    // This tells your server backend to ignore its saved file and grab a new snapshot!
     const timestamp = Date.now();
     img.src = `/api/live-frame?vid=${encodeURIComponent(activeVideoId)}&nocache=true&time=${timestamp}`; 
 
@@ -468,7 +463,6 @@ function drawFlag() {
     const xSpacing = cantonWidth / 12;
     const ySpacing = cantonHeight / 10;
 
-    // Cache star coordinates and associated colors to decouple rendering layers
     const starCoordinates = [];
     let starIndex = 0;
 
@@ -492,7 +486,6 @@ function drawFlag() {
         starCoordinates.forEach((star) => {
             ctx.fillStyle = star.color;
 
-            // Horizontal Grid Lines (X Axis)
             let tileLeft, tileRight;
             if (!star.isEvenRow) {
                 tileLeft = star.col * (xSpacing * 2);
@@ -502,8 +495,6 @@ function drawFlag() {
                 tileRight = (star.col === star.starsInRow - 1) ? cantonWidth : (star.x + xSpacing);
             }
 
-            // Vertical Grid Lines (Y Axis Fix)
-            // Splitting space exactly between star rows instead of using a flat divide
             let tileTop = (star.row === 1) ? 0 : (star.y - (ySpacing / 2));
             let tileBottom = (star.row === 9) ? cantonHeight : (star.y + (ySpacing / 2));
 
@@ -517,7 +508,6 @@ function drawFlag() {
             ctx.fillStyle = "#ffffff";
             drawActualStar(star.x, star.y, 5, 7.5, 3.2);
         } else {
-            // Calibration Marker Overlay Mode
             ctx.fillStyle = star.color;
             ctx.fillRect(star.x - 9, star.y - 9, 18, 18);
             ctx.save(); ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 1.5;
@@ -526,7 +516,6 @@ function drawFlag() {
         }
     });
 
-    // 6. Draw Interactive Green Trapezoid Coordinates
     if (config.debug) {
         ctx.save(); ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 2;
         const tlX = cantonWidth * config.x, trX = tlX + (cantonWidth * config.w), topY = cantonHeight * config.y;
