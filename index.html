@@ -334,9 +334,10 @@ function updateWebcamData() {
     const img = new Image();
     img.crossOrigin = "anonymous";
     
-    // CACHE BUSTER: Appending the exact millisecond timestamp forces the proxy 
-    // to bypass cached memory and grab the absolute freshest frame from YouTube.
-    img.src = `/api/live-frame?vid=${encodeURIComponent(activeVideoId)}&_=${Date.now()}`; 
+    // BACKEND BYPASS: Passing &nocache=true lets your server script know
+    // it MUST discard any downloaded frames on disk and run a fresh scrape.
+    const timestamp = Date.now();
+    img.src = `/api/live-frame?vid=${encodeURIComponent(activeVideoId)}&nocache=true&time=${timestamp}`; 
 
     img.onload = function() {
         if (currentMode !== "live") return;
