@@ -144,8 +144,13 @@
         </div>
 
         <div class="input-group">
-            <label>Cloud Reflection Algae Hue Isolation: <span id="valSat">1.0x (Raw Data)</span></label>
-            <input type="range" id="boxSat" min="1.0" max="4.0" step="0.1" value="1.0">
+            <label>1. Cloud Overcast Contrast Gain: <span id="valCloud">1.0x (Baseline)</span></label>
+            <input type="range" id="boxCloud" min="0.5" max="2.0" step="0.05" value="1.0">
+        </div>
+
+        <div class="input-group">
+            <label>2. Algae Green Channel Isolation: <span id="valAlgae">1.0x (Raw Chroma)</span></label>
+            <input type="range" id="boxAlgae" min="1.0" max="4.0" step="0.1" value="1.0">
         </div>
 
         <div class="input-group">
@@ -191,7 +196,8 @@ const config = {
     w: 0.028, 
     h: 0.196, 
     p: 2.25,
-    sat: 1.0, 
+    cloud: 1.0,
+    algae: 1.0,
     debug: false 
 };
 
@@ -217,15 +223,18 @@ const inputs = [
     { id: 'boxW', key: 'w', div: 'valW', mult: 0.01, unit: '%' },
     { id: 'boxH', key: 'h', div: 'valH', mult: 0.01, unit: '%' },
     { id: 'boxP', key: 'p', div: 'valP', mult: 1, unit: 'x' },
-    { id: 'boxSat', key: 'sat', div: 'valSat', mult: 1, unit: 'x' }
+    { id: 'boxCloud', key: 'cloud', div: 'valCloud', mult: 1, unit: 'x' },
+    { id: 'boxAlgae', key: 'algae', div: 'valAlgae', mult: 1, unit: 'x' }
 ];
 
 inputs.forEach(input => {
     document.getElementById(input.id).addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         config[input.key] = val * input.mult;
-        if(input.key === 'sat') {
-            document.getElementById(input.div).textContent = val === 1.0 ? "1.0x (Raw Data)" : val.toFixed(1) + "x Booster";
+        if(input.key === 'cloud') {
+            document.getElementById(input.div).textContent = val === 1.0 ? "1.0x (Baseline)" : val.toFixed(2) + "x Gain";
+        } else if (input.key === 'algae') {
+            document.getElementById(input.div).textContent = val === 1.0 ? "1.0x (Raw Chroma)" : val.toFixed(1) + "x Iso Booster";
         } else {
             document.getElementById(input.div).textContent = val.toFixed(input.id === 'boxP' ? 2 : 1) + input.unit;
         }
@@ -262,15 +271,11 @@ document.getElementById('streamUrlInput').addEventListener('change', (e) => {
     if(currentMode === "live") updateWebcamData();
 });
 
-// Advanced Color Processing Math
 function rgbToHsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let h, s, l = (max + min) / 2;
-
-    if (max === min) {
-        h = s = 0;
-    } else {
+    if (max === min) { h = s = 0; } else {
         const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         switch (max) {
@@ -285,12 +290,9 @@ function rgbToHsl(r, g, b) {
 
 function hslToRgb(h, s, l) {
     let r, g, b;
-    if (s === 0) {
-        r = g = b = l;
-    } else {
+    if (s === 0) { r = g = b = l; } else {
         const hue2rgb = (p, q, t) => {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
+            if (t < 0) t += 1; if (t > 1) t -= 1;
             if (t < 1/6) return p + (q - p) * 6 * t;
             if (t < 1/2) return q;
             if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
@@ -298,27 +300,31 @@ function hslToRgb(h, s, l) {
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
+        r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
     }
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-// Algae-Targeted Intelligent Filter
-function processAlgaeEnhancement(r, g, b, factor) {
-    if (factor <= 1.0) return [r, g, b];
-    let [h, s, l] = rgbToHsl(r, g, b);
-    
-    // Hue angle degrees: Green spectrum lives roughly between 65° (0.18) and 175° (0.48)
-    const hueDegree = h * 360;
-    if (hueDegree >= 60 && hueDegree <= 180) {
-        s = Math.min(1.0, s * factor);
-    } else if (hueDegree > 180 && hueDegree <= 240) {
-        // Soften sky blues so they don't overpower the green pond data
-        s = s * (1 / factor);
+// Transparent Dual-Filter Image Engine
+function applyAtmosphericFilters(r, g, b) {
+    // 1. Apply Cloud Overcast Contrast/Luminance Gain
+    if (config.cloud !== 1.0) {
+        r = Math.min(255, Math.max(0, ((r - 128) * config.cloud) + 128));
+        g = Math.min(255, Math.max(0, ((g - 128) * config.cloud) + 128));
+        b = Math.min(255, Math.max(0, ((b - 128) * config.cloud) + 128));
     }
-    return hslToRgb(h, s, l);
+
+    // 2. Apply Algae Green Channel Selective Isolation
+    if (config.algae > 1.0) {
+        let [h, s, l] = rgbToHsl(r, g, b);
+        const hueDegree = h * 360;
+        // Strict Biological Algae Green Spectrum Pass filter
+        if (hueDegree >= 65 && hueDegree <= 175) {
+            s = Math.min(1.0, s * config.algae);
+        }
+        [r, g, b] = hslToRgb(h, s, l);
+    }
+    return [r, g, b];
 }
 
 function updateWebcamData() {
@@ -383,7 +389,7 @@ function get50StarColorsFromTrapezoid(sCtx, imgW, imgH) {
 
             try {
                 const pixel = sCtx.getImageData(safeX, safeY, 1, 1).data;
-                const [r, g, b] = processAlgaeEnhancement(pixel[0], pixel[1], pixel[2], config.sat);
+                const [r, g, b] = applyAtmosphericFilters(pixel[0], pixel[1], pixel[2]);
                 colors.push(`rgb(${r}, ${g}, ${b})`);
             } catch(e) {
                 colors.push("#1a2c42");
@@ -429,12 +435,12 @@ function drawFlag() {
         starBackgroundColors = get50StarColorsFromTrapezoid(sCtx, rawWebcamImage.width, rawWebcamImage.height);
     }
 
-    // 4. Calibration Frame Underlay (Processed with Selective Filter)
+    // 4. Underlay Preview Layer
     if (config.debug && rawWebcamImage) {
         ctx.save();
         ctx.globalAlpha = 0.75;
 
-        if (config.sat > 1.0) {
+        if (config.cloud !== 1.0 || config.algae > 1.0) {
             const filterCanvas = document.createElement('canvas');
             filterCanvas.width = rawWebcamImage.width;
             filterCanvas.height = rawWebcamImage.height;
@@ -445,7 +451,7 @@ function drawFlag() {
             const data = imgData.data;
 
             for (let i = 0; i < data.length; i += 4) {
-                const [r, g, b] = processAlgaeEnhancement(data[i], data[i+1], data[i+2], config.sat);
+                const [r, g, b] = applyAtmosphericFilters(data[i], data[i+1], data[i+2]);
                 data[i] = r; data[i+1] = g; data[i+2] = b;
             }
             fCtx.putImageData(imgData, 0, 0);
@@ -456,7 +462,7 @@ function drawFlag() {
         ctx.restore();
     }
 
-    // 5. Render Centered Mosaic Tiles + Stars
+    // 5. Perfect Star-Anchored Grid Render Loop
     let starIndex = 0;
     const xSpacing = cantonWidth / 12;
     const ySpacing = cantonHeight / 10;
@@ -466,9 +472,6 @@ function drawFlag() {
         const isEvenRow = (row % 2 === 0);
         const starsInRow = isEvenRow ? 5 : 6;
         const starXStart = isEvenRow ? xSpacing * 2 : xSpacing;
-
-        // Calculate tile boundaries dynamically based on row patterns
-        const cellWidth = cantonWidth / (starsInRow * 2);
         const cellYStart = (row - 1) * rowHeight;
 
         for (let col = 0; col < starsInRow; col++) {
@@ -479,22 +482,26 @@ function drawFlag() {
             const starY = row * ySpacing;
 
             if (!config.debug) {
-                // NORMAL VIEW: Stars are perfectly centered inside their bounding color tiles
                 ctx.fillStyle = algeaColor;
                 
-                let tileLeft = starX - xSpacing;
-                let tileRight = starX + xSpacing;
-                
-                // Stretch edge blocks to touch borders perfectly
-                if (col === 0) tileLeft = 0;
-                if (col === starsInRow - 1) tileRight = cantonWidth;
+                // MATH FIX: Custom boundaries anchored directly around the star's precise center point
+                let tileLeft, tileRight;
+                if (!isEvenRow) {
+                    // 6 Star Rows: Boundaries occur exactly on even intervals of xSpacing
+                    tileLeft = col * (xSpacing * 2);
+                    tileRight = tileLeft + (xSpacing * 2);
+                } else {
+                    // 5 Star Rows: Symmetric margins shift interior midpoints half-way between stars
+                    tileLeft = (col === 0) ? 0 : (starX - xSpacing);
+                    tileRight = (col === starsInRow - 1) ? cantonWidth : (starX + xSpacing);
+                }
 
-                ctx.fillRect(tileLeft, cellYStart, (tileRight - tileLeft) + 0.5, rowHeight + 0.5);
+                ctx.fillRect(tileLeft, cellYStart, (tileRight - tileLeft) + 0.6, rowHeight + 0.6);
                 
                 ctx.fillStyle = "#ffffff";
                 drawActualStar(starX, starY, 5, 7.5, 3.2);
             } else {
-                // CALIBRATION VIEW
+                // Calibration trackers
                 ctx.fillStyle = algeaColor;
                 ctx.fillRect(starX - 9, starY - 9, 18, 18);
                 ctx.save(); ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 1.5;
@@ -504,7 +511,7 @@ function drawFlag() {
         }
     }
 
-    // 6. Draw Interactive Green Trapezoid
+    // 6. Target Trapezoid
     if (config.debug) {
         ctx.save(); ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 2;
         const tlX = cantonWidth * config.x, trX = tlX + (cantonWidth * config.w), topY = cantonHeight * config.y;
@@ -518,3 +525,5 @@ function drawFlag() {
 updateWebcamData();
 setInterval(updateWebcamData, 60000);
 </script>
+</body>
+</html>
