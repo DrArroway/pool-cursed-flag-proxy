@@ -400,17 +400,20 @@ function drawActualStar(cx, cy, spikes, outerRadius, innerRadius) {
 function drawFlag() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // 1. Draw Stripes
     const stripeHeight = canvas.height / 13;
     for (let i = 0; i < 13; i++) {
         ctx.fillStyle = (i % 2 === 0) ? "#b22234" : "#ffffff";
         ctx.fillRect(0, i * stripeHeight, canvas.width, stripeHeight);
     }
 
+    // 2. Base Canton Sizing
     const cantonWidth = canvas.width * 0.4;
     const cantonHeight = stripeHeight * 7;
     ctx.fillStyle = "#1a2c42";
     ctx.fillRect(0, 0, cantonWidth, cantonHeight);
 
+    // 3. Sync colors from image
     if (rawWebcamImage) {
         const sampleCanvas = document.createElement('canvas');
         sampleCanvas.width = rawWebcamImage.width;
@@ -420,12 +423,41 @@ function drawFlag() {
         starBackgroundColors = get50StarColorsFromTrapezoid(sCtx, rawWebcamImage.width, rawWebcamImage.height);
     }
 
+    // 4. Calibration Frame Underlay (Processed with Saturation Filter for Transparency)
     if (config.debug && rawWebcamImage) {
-        ctx.save(); ctx.globalAlpha = 0.75;
-        ctx.drawImage(rawWebcamImage, 0, 0, cantonWidth, cantonHeight);
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+
+        if (config.sat > 1.0) {
+            // Create a temporary workspace to mutate pixels of the full preview image cleanly
+            const filterCanvas = document.createElement('canvas');
+            filterCanvas.width = rawWebcamImage.width;
+            filterCanvas.height = rawWebcamImage.height;
+            const fCtx = filterCanvas.getContext('2d');
+            fCtx.drawImage(rawWebcamImage, 0, 0);
+
+            const imgData = fCtx.getImageData(0, 0, filterCanvas.width, filterCanvas.height);
+            const data = imgData.data;
+
+            // Run every single frame pixel through the exact same HSL algorithm as the stars
+            for (let i = 0; i < data.length; i += 4) {
+                let [h, s, l] = rgbToHsl(data[i], data[i+1], data[i+2]);
+                s = Math.min(1.0, s * config.sat);
+                const [r, g, b] = hslToRgb(h, s, l);
+                data[i] = r;
+                data[i+1] = g;
+                data[i+2] = b;
+            }
+            fCtx.putImageData(imgData, 0, 0);
+            ctx.drawImage(filterCanvas, 0, 0, cantonWidth, cantonHeight);
+        } else {
+            // Draw standard raw data if slider is at baseline 1.0x
+            ctx.drawImage(rawWebcamImage, 0, 0, cantonWidth, cantonHeight);
+        }
         ctx.restore();
     }
 
+    // 5. Render Mosaic Tiles + Stars
     let starIndex = 0;
     const rowHeight = cantonHeight / 9;
     const xSpacing = cantonWidth / 12;
@@ -441,6 +473,7 @@ function drawFlag() {
         for (let col = 0; col < starsInRow; col++) {
             const algeaColor = starBackgroundColors[starIndex] || "#1a2c42";
             starIndex++;
+
             const starX = starXStart + (col * xSpacing * 2);
             const starY = row * ySpacing;
 
@@ -452,20 +485,36 @@ function drawFlag() {
             } else {
                 ctx.fillStyle = algeaColor;
                 ctx.fillRect(starX - 9, starY - 9, 18, 18);
-                ctx.save(); ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 1.5;
+                
+                ctx.save();
+                ctx.strokeStyle = "#ff0000";
+                ctx.lineWidth = 1.5;
                 ctx.beginPath(); ctx.moveTo(starX - 5, starY); ctx.lineTo(starX + 5, starY); ctx.moveTo(starX, starY - 5); ctx.lineTo(starX, starY + 5); ctx.stroke();
                 ctx.restore();
             }
         }
     }
 
+    // 6. Draw Interactive Green Trapezoid
     if (config.debug) {
-        ctx.save(); ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 2;
-        const tlX = cantonWidth * config.x, trX = tlX + (cantonWidth * config.w), topY = cantonHeight * config.y;
-        const bottomW = (cantonWidth * config.w) * config.p, wDiff = bottomW - (cantonWidth * config.w);
-        const blX = tlX - (wDiff / 2), brX = blX + bottomW, bottomY = topY + (cantonHeight * config.h);
-        ctx.beginPath(); ctx.moveTo(tlX, topY); ctx.lineTo(trX, topY); ctx.lineTo(brX, bottomY); ctx.lineTo(blX, bottomY);
-        ctx.closePath(); ctx.stroke(); ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = "#00ff00";
+        ctx.lineWidth = 2;
+        
+        const tlX = cantonWidth * config.x;
+        const trX = tlX + (cantonWidth * config.w);
+        const topY = cantonHeight * config.y;
+        
+        const bottomW = (cantonWidth * config.w) * config.p;
+        const wDiff = bottomW - (cantonWidth * config.w);
+        const blX = tlX - (wDiff / 2);
+        const brX = blX + bottomW;
+        const bottomY = topY + (cantonHeight * config.h);
+
+        ctx.beginPath();
+        ctx.moveTo(tlX, topY); ctx.lineTo(trX, topY); ctx.lineTo(brX, bottomY); ctx.lineTo(blX, bottomY);
+        ctx.closePath(); ctx.stroke();
+        ctx.restore();
     }
 }
 
