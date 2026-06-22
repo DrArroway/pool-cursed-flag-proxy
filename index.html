@@ -94,24 +94,43 @@ function updateWebcamData() {
 function get50StarColorsFromBoundingBox(sCtx, imgW, imgH) {
     const colors = [];
     
-    // Turn our percentages into physical pixel markers on the real image matrix
-    const startX = imgW * config.x;
-    const startY = imgH * config.y;
+    // Core baseline coordinates (mapped from your current winning sliders)
+    const baseStartX = imgW * config.x;
+    const baseStartY = imgH * config.y;
     const targetW = imgW * config.w;
     const targetH = imgH * config.h;
 
-    const xSpacing = targetW / 12;
-    const ySpacing = targetH / 10;
+    // PERSPECTIVE EXTENSION COEFFICIENT
+    // A multiplier of 1.0 means a perfect rectangle.
+    // Setting this to 2.5 means the bottom of our matrix grid will be 2.5x WIDER 
+    // than the top row, perfectly mirroring the lens's depth perception!
+    const perspectiveExpansionFactor = 2.5;
 
     for (let row = 1; row <= 9; row++) {
+        // Calculate how far down the pool we are (0.0 at the top, 1.0 at the bottom)
+        const progress = (row - 1) / 8; 
+
+        // Scale the row width dynamically based on perspective depth
+        const currentRowWidth = targetW * (1 + progress * (perspectiveExpansionFactor - 1));
+        
+        // Shift the row's starting X coordinate to the left so it expands outwards evenly from the center line
+        const widthDifference = currentRowWidth - targetW;
+        const rowStartX = baseStartX - (widthDifference / 2);
+
+        // Grid tracking spacing for this SPECIFIC row depth
+        const xSpacing = currentRowWidth / 12;
+        const ySpacing = targetH / 10;
+
         const isEvenRow = (row % 2 === 0);
         const starsInRow = isEvenRow ? 5 : 6;
-        const rowStartX = startX + (isEvenRow ? xSpacing * 2 : xSpacing);
+        const starRowLeftEdge = rowStartX + (isEvenRow ? xSpacing * 2 : xSpacing);
+
+        const pixelY = Math.floor(baseStartY + (row * ySpacing));
 
         for (let col = 0; col < starsInRow; col++) {
-            const pixelX = Math.floor(rowStartX + (col * xSpacing * 2));
-            const pixelY = Math.floor(startY + (row * ySpacing));
+            const pixelX = Math.floor(starRowLeftEdge + (col * xSpacing * 2));
 
+            // Guard rails to keep sampling coordinates from leaping off screen borders
             const safeX = Math.max(0, Math.min(imgW - 1, pixelX));
             const safeY = Math.max(0, Math.min(imgH - 1, pixelY));
 
@@ -195,11 +214,34 @@ function drawFlag() {
     }
 
     // 6. Draw Green Bounding Box Target
+    // 6. Draw Green Trapezoid Perspective Frame
     if (config.debug) {
         ctx.save();
         ctx.strokeStyle = "#00ff00";
         ctx.lineWidth = 2;
-        ctx.strokeRect(cantonWidth * config.x, cantonHeight * config.y, cantonWidth * config.w, cantonHeight * config.h);
+        
+        const cW = cantonWidth;
+        const cH = cantonHeight;
+        const pExpand = 2.5; // Must match the value in the sampler function above!
+
+        // Top Left, Top Right, Bottom Right, Bottom Left coordinates
+        const tlX = cW * config.x;
+        const trX = tlX + (cW * config.w);
+        const topY = cH * config.y;
+        
+        const bottomW = (cW * config.w) * pExpand;
+        const wDiff = bottomW - (cW * config.w);
+        const blX = tlX - (wDiff / 2);
+        const brX = blX + bottomW;
+        const bottomY = topY + (cH * config.h);
+
+        ctx.beginPath();
+        ctx.moveTo(tlX, topY);
+        ctx.lineTo(trX, topY);
+        ctx.lineTo(brX, bottomY);
+        ctx.lineTo(blX, bottomY);
+        ctx.closePath();
+        ctx.stroke();
         ctx.restore();
     }
 }
