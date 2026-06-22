@@ -2,11 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pool-cursed-flag-proxy",
   "compatibility_date": "2026-06-22",
+  "main": "earthcam-proxy.js", 
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "."
+    "directory": "." 
   },
   "compatibility_flags": [
     "nodejs_compat"
