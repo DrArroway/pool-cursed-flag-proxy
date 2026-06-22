@@ -3,7 +3,8 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/live-frame") {
-      const targetUrl = "https://images.earthcam.com/ec_stills_plugins/static/wamo.jpg";
+      // Grabs a real-time thumbnail frame from a public stream route
+      const targetUrl = "https://img.youtube.com/vi/iNhVvbGBP3Q/maxresdefault.jpg";
       
       try {
         const response = await fetch(targetUrl, {
