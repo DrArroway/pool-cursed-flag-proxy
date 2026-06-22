@@ -412,20 +412,20 @@ function drawActualStar(cx, cy, spikes, outerRadius, innerRadius) {
 function drawFlag() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 1. Draw Stripes
+    // 1. Draw Flag Stripes
     const stripeHeight = canvas.height / 13;
     for (let i = 0; i < 13; i++) {
         ctx.fillStyle = (i % 2 === 0) ? "#b22234" : "#ffffff";
         ctx.fillRect(0, i * stripeHeight, canvas.width, stripeHeight);
     }
 
-    // 2. Base Canton Sizing
+    // 2. Base Canton Area Sizing
     const cantonWidth = canvas.width * 0.4;
     const cantonHeight = stripeHeight * 7;
     ctx.fillStyle = "#1a2c42";
     ctx.fillRect(0, 0, cantonWidth, cantonHeight);
 
-    // 3. Sync colors from image
+    // 3. Process Live Data Matrix
     if (rawWebcamImage) {
         const sampleCanvas = document.createElement('canvas');
         sampleCanvas.width = rawWebcamImage.width;
@@ -435,7 +435,7 @@ function drawFlag() {
         starBackgroundColors = get50StarColorsFromTrapezoid(sCtx, rawWebcamImage.width, rawWebcamImage.height);
     }
 
-    // 4. Underlay Preview Layer
+    // 4. Draw Camera Frame Underlay (For Calibration)
     if (config.debug && rawWebcamImage) {
         ctx.save();
         ctx.globalAlpha = 0.75;
@@ -462,56 +462,68 @@ function drawFlag() {
         ctx.restore();
     }
 
-    // 5. Perfect Star-Anchored Grid Render Loop
-    let starIndex = 0;
     const xSpacing = cantonWidth / 12;
     const ySpacing = cantonHeight / 10;
-    const rowHeight = cantonHeight / 9;
+
+    // Cache star coordinates and associated colors to decouple rendering layers
+    const starCoordinates = [];
+    let starIndex = 0;
 
     for (let row = 1; row <= 9; row++) {
         const isEvenRow = (row % 2 === 0);
         const starsInRow = isEvenRow ? 5 : 6;
         const starXStart = isEvenRow ? xSpacing * 2 : xSpacing;
-        const cellYStart = (row - 1) * rowHeight;
 
         for (let col = 0; col < starsInRow; col++) {
+            const starX = starXStart + (col * xSpacing * 2);
+            const starY = row * ySpacing;
             const algeaColor = starBackgroundColors[starIndex] || "#1a2c42";
             starIndex++;
 
-            const starX = starXStart + (col * xSpacing * 2);
-            const starY = row * ySpacing;
-
-            if (!config.debug) {
-                ctx.fillStyle = algeaColor;
-                
-                // MATH FIX: Custom boundaries anchored directly around the star's precise center point
-                let tileLeft, tileRight;
-                if (!isEvenRow) {
-                    // 6 Star Rows: Boundaries occur exactly on even intervals of xSpacing
-                    tileLeft = col * (xSpacing * 2);
-                    tileRight = tileLeft + (xSpacing * 2);
-                } else {
-                    // 5 Star Rows: Symmetric margins shift interior midpoints half-way between stars
-                    tileLeft = (col === 0) ? 0 : (starX - xSpacing);
-                    tileRight = (col === starsInRow - 1) ? cantonWidth : (starX + xSpacing);
-                }
-
-                ctx.fillRect(tileLeft, cellYStart, (tileRight - tileLeft) + 0.6, rowHeight + 0.6);
-                
-                ctx.fillStyle = "#ffffff";
-                drawActualStar(starX, starY, 5, 7.5, 3.2);
-            } else {
-                // Calibration trackers
-                ctx.fillStyle = algeaColor;
-                ctx.fillRect(starX - 9, starY - 9, 18, 18);
-                ctx.save(); ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 1.5;
-                ctx.beginPath(); ctx.moveTo(starX - 5, starY); ctx.lineTo(starX + 5, starY); ctx.moveTo(starX, starY - 5); ctx.lineTo(starX, starY + 5); ctx.stroke();
-                ctx.restore();
-            }
+            starCoordinates.push({ x: starX, y: starY, row: row, col: col, isEvenRow: isEvenRow, starsInRow: starsInRow, color: algeaColor });
         }
     }
 
-    // 6. Target Trapezoid
+    // PHASE ONE: Render Background Mosaic Tiles only
+    if (!config.debug) {
+        starCoordinates.forEach((star) => {
+            ctx.fillStyle = star.color;
+
+            // Horizontal Grid Lines (X Axis)
+            let tileLeft, tileRight;
+            if (!star.isEvenRow) {
+                tileLeft = star.col * (xSpacing * 2);
+                tileRight = tileLeft + (xSpacing * 2);
+            } else {
+                tileLeft = (star.col === 0) ? 0 : (star.x - xSpacing);
+                tileRight = (star.col === star.starsInRow - 1) ? cantonWidth : (star.x + xSpacing);
+            }
+
+            // Vertical Grid Lines (Y Axis Fix)
+            // Splitting space exactly between star rows instead of using a flat divide
+            let tileTop = (star.row === 1) ? 0 : (star.y - (ySpacing / 2));
+            let tileBottom = (star.row === 9) ? cantonHeight : (star.y + (ySpacing / 2));
+
+            ctx.fillRect(tileLeft, tileTop, (tileRight - tileLeft) + 0.5, (tileBottom - tileTop) + 0.5);
+        });
+    }
+
+    // PHASE TWO: Draw Stars completely on top of everything
+    starCoordinates.forEach((star) => {
+        if (!config.debug) {
+            ctx.fillStyle = "#ffffff";
+            drawActualStar(star.x, star.y, 5, 7.5, 3.2);
+        } else {
+            // Calibration Marker Overlay Mode
+            ctx.fillStyle = star.color;
+            ctx.fillRect(star.x - 9, star.y - 9, 18, 18);
+            ctx.save(); ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(star.x - 5, star.y); ctx.lineTo(star.x + 5, star.y); ctx.moveTo(star.x, star.y - 5); ctx.lineTo(star.x, star.y + 5); ctx.stroke();
+            ctx.restore();
+        }
+    });
+
+    // 6. Draw Interactive Green Trapezoid Coordinates
     if (config.debug) {
         ctx.save(); ctx.strokeStyle = "#00ff00"; ctx.lineWidth = 2;
         const tlX = cantonWidth * config.x, trX = tlX + (cantonWidth * config.w), topY = cantonHeight * config.y;
