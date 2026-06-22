@@ -29,7 +29,14 @@
     </style>
 </head>
 <body>
-
+    <div id="controls" style="margin: 10px auto; max-width: 600px; font-family: monospace; background: #222; color: #fff; padding: 15px; border-radius: 8px; text-align: left; box-sizing: border-box;">
+    <h3 style="margin-top: 0; color: #00ff00;">🗺️ Algae Matrix Calibration Panel</h3>
+    <div style="margin-bottom: 8px;"><label>Box X (Left/Right): <input type="range" id="boxX" min="0" max="100" value="46"> <span id="valX">46%</span></label></div>
+    <div style="margin-bottom: 8px;"><label>Box Y (Up/Down): <input type="range" id="boxY" min="0" max="100" value="45"> <span id="valY">45%</span></label></div>
+    <div style="margin-bottom: 8px;"><label>Box Width: <input type="range" id="boxW" min="1" max="100" value="5"> <span id="valW">5%</span></label></div>
+    <div style="margin-bottom: 8px;"><label>Box Height: <input type="range" id="boxH" min="1" max="100" value="32"> <span id="valH">32%</span></label></div>
+    <label style="margin-top:10px; display:inline-block; cursor:pointer;"><input type="checkbox" id="toggleDebug" checked> Show Raw Camera Feed Overlay</label>
+      </div>
     <canvas id="flagCanvas" width="1900" height="1000"></canvas>
     <div id="status">Connecting live feed to D.C. Reflecting Pool webcam...</div>
 
