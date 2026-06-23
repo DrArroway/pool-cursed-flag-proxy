@@ -77,7 +77,7 @@
                         <label for="sourceSelector" style="color: #e1e8ed;">Select Matrix Input Source</label>
                         <select id="sourceSelector" class="form-select">
                             <option value="proxy-latest" selected>🟢 Custom Proxy (Latest)</option>
-                            <option value="live">🔴 Live Feed (YouTube)</option>
+                            <option value="live">🔴 YT Preview Thumbnail (Static Fallback)</option>
                         </select>
                     </div>
                     <div class="mb-2 small text-muted" id="currentSource" style="color: #8899a6 !important;">Target: oDCAAfOSqvA</div>
@@ -249,9 +249,9 @@ document.getElementById('sourceSelector').addEventListener('change', (e) => {
     currentMode = val;
     
     if (val === 'live') {
-        document.getElementById('valSource').textContent = "🔴 Live Feed";
+        document.getElementById('valSource').textContent = "🔴 YT Preview Thumbnail";
         document.getElementById('valSource').className = "badge bg-danger";
-        statusDiv.innerHTML = `<strong style="color: #ffcc00;">⚠️ RUNTIME NOTICE:</strong> The YouTube live stream matrix shifts slightly compared to repository crop snapshots. Please expand the <strong>🛠️ Calibration Panel</strong> to realign if using this preview pipeline.`;
+        statusDiv.innerHTML = `<strong style="color: #ffcc00;">⚠️ RUNTIME NOTICE:</strong> This static video placeholder layout differs from our cropped repository snapshots. Please expand the <strong>🛠️ Calibration Panel</strong> to realign if using this preview pipeline.`;
         updateWebcamData();
     } else if (val === 'proxy-latest') {
         document.getElementById('valSource').textContent = "🟢 Custom Proxy (Latest)";
@@ -379,7 +379,7 @@ function loadLatestProxyImage() {
         testImg.onerror = function() {
             if (highestFoundImg) {
                 rawWebcamImage = highestFoundImg;
-                statusDiv.textContent = `Displaying real-time custom daytime proxy layer snapshot metrics (${todayStr}_${currentCheckIndex - 1}.jpg).`;
+                statusDiv.textContent = `Displaying custom daytime proxy snapshot metrics: archive-${todayStr}_${currentCheckIndex - 1}.jpg (Captured Today: ${todayStr}).`;
                 drawFlag();
             } else {
                 loadYesterdayFallback();
@@ -395,7 +395,7 @@ function loadLatestProxyImage() {
         const yDay = String(yesterday.getDate()).padStart(2, '0');
         const yesterdayStr = `${yYear}-${yMonth}-${yDay}`;
 
-        statusDiv.textContent = `Today's image pending sunrise runtime. Loading historical baseline array (${yesterdayStr}_1.jpg)...`;
+        statusDiv.textContent = `Today's image pending sunrise runtime. Loading historical baseline array: archive-${yesterdayStr}_1.jpg (Captured: ${yesterdayStr}).`;
         
         const fallbackImg = new Image();
         fallbackImg.src = `./semiLivePics/archive-${yesterdayStr}_1.jpg`;
