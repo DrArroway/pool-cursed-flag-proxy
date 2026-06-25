@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reflecting Pool Pixel Alignment Console</title>
+    <title>Reflecting Pool Matrix Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -65,83 +65,125 @@
         <div class="col-lg-8 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span class="text-white">🎯 Optic Projection Calibration Viewport</span>
-                    <span id="valSource" class="badge bg-success">🟢 Active Image Mode</span>
+                    <span class="text-white">🇺🇸 Dynamic Pixel Chroma Canton Canvas Matrix</span>
+                    <span id="valSource" class="badge bg-success">🟢 Custom Proxy (Latest)</span>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
                     <canvas id="flagCanvas" width="1280" height="720"></canvas>
-                    <div id="status" class="mt-3 text-muted small w-100 text-start px-2">Initializing calibration console...</div>
+                    <div id="status" class="mt-3 text-muted small w-100 text-start px-2">Initializing calibration layers...</div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-4 mb-4">
             <div class="card mb-3">
-                <div class="card-header text-white">📡 Archive Pipeline Target</div>
+                <div class="card-header text-white">📡 Frame Pipeline Sources</div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="sourceSelector">Select Data Flow Source</label>
+                        <label for="sourceSelector">Select Matrix Input Source</label>
                         <select id="sourceSelector" class="form-select mb-2">
-                            <option value="proxy-latest" selected>🟢 Latest Local Capture</option>
-                            <option value="archive-browse">📅 Browse Historical Sequence...</option>
+                            <option value="proxy-latest" selected>🟢 Custom Proxy (Latest)</option>
+                            <option value="live">🔴 YT Preview Thumbnail (Static Fallback)</option>
+                            <option value="archive-browse">📅 Browse Historical Archive...</option>
                         </select>
                     </div>
 
                     <div id="archivePickerContainer" class="mb-3" style="display: none;">
-                        <label for="archiveDateSelect" style="color: #58a6ff !important;">Select Capture Date</label>
+                        <label for="archiveDateSelect" style="color: #58a6ff !important;">Select Available Capture Date</label>
                         <select id="archiveDateSelect" class="form-select mb-2"></select>
 
-                        <label for="archiveIndexInput" style="color: #58a6ff !important;">Sequence Step</label>
+                        <label for="archiveIndexInput" style="color: #58a6ff !important;">Image Sequence Index</label>
                         <div class="input-group input-group-sm mb-2">
                             <input type="number" id="archiveIndexInput" class="form-control" value="1" min="1" max="1">
-                            <span class="input-group-text bg-dark border-secondary text-muted" id="maxAvailableLabel">of 1</span>
-                            <button id="loadArchiveBtn" class="btn btn-info text-dark fw-bold">Load Frame</button>
+                            <span class="input-group-text bg-dark border-secondary text-muted" id="maxAvailableLabel">of 1 available</span>
+                            <button id="loadArchiveBtn" class="btn btn-info text-dark fw-bold">Load</button>
                         </div>
 
                         <div id="archiveMetaDetails" class="alert alert-dark py-2 px-3 small mt-2 mb-0 border-secondary text-info" style="display: none; font-family: monospace; background-color: #0d1117;">
-                            ⏰ Sequence Time Readout...
+                            ⏰ Capture Time: Processing timestamp...
+                        </div>
+                    </div>
+
+                    <div id="youtubeStreamContainer" style="display: none;">
+                        <div class="mb-2 small text-muted" id="currentSource">Target: oDCAAfOSqvA</div>
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="text" id="streamUrlInput" class="form-control" placeholder="Change YouTube Stream ID/URL">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header text-white">📐 Coordinate Trapezoid Calibration Geometry</div>
+            <div class="card mb-3">
+                <div class="card-header text-white">🔍 Viewport Extraction Optic</div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleZoomMode">
+                        <label class="form-check-label text-info fw-bold" for="toggleZoomMode">Magnify & Zoom directly to Pool Trapezoid</label>
+                    </div>
+                    <small class="text-muted d-block mt-1">When active, scales the canvas target rendering to visually fill the matrix container exclusively with the reflecting pool perimeter bounds.</small>
+                </div>
+            </div>
+
+            <button id="toggleCalibrateBtn" class="btn btn-primary w-100 mb-3 fw-bold">🛠️ Open Calibration Panel</button>
+
+            <div class="card" id="calibrationPanel" style="display: none;">
+                <div class="card-header text-white">🎯 Grid Overlay Calibration Mechanics</div>
                 <div class="card-body">
 
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" id="toggleDebug">
+                        <label class="form-check-label text-warning fw-bold" for="toggleDebug">Toggle Direct Frame Alpha Underlay Overlay</label>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Trapezoid X Center Placement:
+                        <label class="form-label">Box X Axis Placement (Horizontal Center):
                             <span id="valX" class="slider-label-val">50.5%</span>
                         </label>
                         <input type="range" class="form-range" id="boxX" min="0" max="100" step="0.1" value="50.5">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Top Cutoff Level Y Position:
+                        <label class="form-label">Box Y Axis Placement (Top Water Cutoff):
                             <span id="valY" class="slider-label-val">60.9%</span>
                         </label>
                         <input type="range" class="form-range" id="boxY" min="0" max="100" step="0.1" value="60.9">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Top Frame Boundary Width:
+                        <label class="form-label">Top Matrix Width (Canton Scale Edge):
                             <span id="valW" class="slider-label-val">1.8%</span>
                         </label>
                         <input type="range" class="form-range" id="boxW" min="0.1" max="15" step="0.05" value="1.8">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Total Sample Horizon Length:
+                        <label class="form-label">Total Column Sample Depth Height:
                             <span id="valH" class="slider-label-val">15.5%</span>
                         </label>
                         <input type="range" class="form-range" id="boxH" min="0.5" max="40" step="0.1" value="15.5">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Perspective Horizon Flare (Ratio):
+                        <label class="form-label">Trapezoid Perspective Flare (Expansion):
                             <span id="valP" class="slider-label-val">2.25x</span>
                         </label>
                         <input type="range" class="form-range" id="boxP" min="1.0" max="4.0" step="0.05" value="2.25">
+                    </div>
+
+                    <hr style="border-color: #30363d;">
+
+                    <div class="mb-3">
+                        <label class="form-label">Cloud/Atmospheric Attenuation Booster:
+                            <span id="valCloud" class="slider-label-val">1.0x (Baseline)</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxCloud" min="0.5" max="3.0" step="0.05" value="1.0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Algae Chroma Isolation Gain:
+                            <span id="valAlgae" class="slider-label-val">1.0x (Raw Chroma)</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxAlgae" min="1.0" max="5.0" step="0.1" value="1.0">
                     </div>
 
                 </div>
