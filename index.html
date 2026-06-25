@@ -21,6 +21,7 @@
             background-color: #21262d;
             border-bottom: 1px solid #30363d;
             font-weight: 600;
+            color: #ffffff !important;
         }
         #flagCanvas {
             border: 1px solid #30363d;
@@ -28,10 +29,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             max-width: 100%;
             height: auto;
+            background-color: #000000;
         }
         label {
             font-weight: 500;
             margin-bottom: 4px;
+            color: #e1e8ed !important;
         }
         .form-select, .form-control {
             background-color: #0d1117;
@@ -50,6 +53,9 @@
             color: #58a6ff;
             float: right;
         }
+        .text-muted {
+            color: #8b949e !important;
+        }
     </style>
 </head>
 <body>
@@ -59,7 +65,7 @@
         <div class="col-lg-8 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>🇺🇸 Dynamic Pixel Chroma Canton Canvas Matrix</span>
+                    <span class="text-white">🇺🇸 Dynamic Pixel Chroma Canton Canvas Matrix</span>
                     <span id="valSource" class="badge bg-success">🟢 Custom Proxy (Latest)</span>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
@@ -71,10 +77,10 @@
 
         <div class="col-lg-4 mb-4">
             <div class="card mb-3">
-                <div class="card-header">📡 Frame Pipeline Sources</div>
+                <div class="card-header text-white">📡 Frame Pipeline Sources</div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="sourceSelector" style="color: #e1e8ed;">Select Matrix Input Source</label>
+                        <label for="sourceSelector">Select Matrix Input Source</label>
                         <select id="sourceSelector" class="form-select mb-2">
                             <option value="proxy-latest" selected>🟢 Custom Proxy (Latest)</option>
                             <option value="live">🔴 YT Preview Thumbnail (Static Fallback)</option>
@@ -83,10 +89,10 @@
                     </div>
 
                     <div id="archivePickerContainer" class="mb-3" style="display: none;">
-                        <label for="archiveDateSelect" style="color: #58a6ff;">Select Available Capture Date</label>
+                        <label for="archiveDateSelect" style="color: #58a6ff !important;">Select Available Capture Date</label>
                         <select id="archiveDateSelect" class="form-select mb-2"></select>
 
-                        <label for="archiveIndexInput" style="color: #58a6ff;">Image Sequence Index</label>
+                        <label for="archiveIndexInput" style="color: #58a6ff !important;">Image Sequence Index</label>
                         <div class="input-group input-group-sm mb-2">
                             <input type="number" id="archiveIndexInput" class="form-control" value="1" min="1" max="1">
                             <span class="input-group-text bg-dark border-secondary text-muted" id="maxAvailableLabel">of 1 available</span>
@@ -99,7 +105,7 @@
                     </div>
 
                     <div id="youtubeStreamContainer" style="display: none;">
-                        <div class="mb-2 small text-muted" id="currentSource" style="color: #8899a6 !important;">Target: oDCAAfOSqvA</div>
+                        <div class="mb-2 small text-muted" id="currentSource">Target: oDCAAfOSqvA</div>
                         <div class="input-group input-group-sm mb-1">
                             <input type="text" id="streamUrlInput" class="form-control" placeholder="Change YouTube Stream ID/URL">
                         </div>
@@ -108,7 +114,7 @@
             </div>
 
             <div class="card mb-3">
-                <div class="card-header">🔍 Viewport Extraction Optic</div>
+                <div class="card-header text-white">🔍 Viewport Extraction Optic</div>
                 <div class="card-body">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="toggleZoomMode">
@@ -121,7 +127,7 @@
             <button id="toggleCalibrateBtn" class="btn btn-primary w-100 mb-3 fw-bold">🛠️ Open Calibration Panel</button>
 
             <div class="card" id="calibrationPanel" style="display: none;">
-                <div class="card-header" style="color: #ffffff;">🎯 Grid Overlay Calibration Mechanics</div>
+                <div class="card-header text-white">🎯 Grid Overlay Calibration Mechanics</div>
                 <div class="card-body">
 
                     <div class="form-check form-switch mb-4">
@@ -130,4 +136,63 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="
+                        <label class="form-label">Box X Axis Placement (Horizontal Center):
+                            <span id="valX" class="slider-label-val">50.5%</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxX" min="0" max="100" step="0.1" value="50.5">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Box Y Axis Placement (Top Water Cutoff):
+                            <span id="valY" class="slider-label-val">60.9%</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxY" min="0" max="100" step="0.1" value="60.9">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Top Matrix Width (Canton Scale Edge):
+                            <span id="valW" class="slider-label-val">1.8%</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxW" min="0.1" max="15" step="0.05" value="1.8">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Total Column Sample Depth Height:
+                            <span id="valH" class="slider-label-val">15.5%</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxH" min="0.5" max="40" step="0.1" value="15.5">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Trapezoid Perspective Flare (Expansion):
+                            <span id="valP" class="slider-label-val">2.25x</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxP" min="1.0" max="4.0" step="0.05" value="2.25">
+                    </div>
+
+                    <hr style="border-color: #30363d;">
+
+                    <div class="mb-3">
+                        <label class="form-label">Cloud/Atmospheric Attenuation Booster:
+                            <span id="valCloud" class="slider-label-val">1.0x (Baseline)</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxCloud" min="0.5" max="3.0" step="0.05" value="1.0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Algae Chroma Isolation Gain:
+                            <span id="valAlgae" class="slider-label-val">1.0x (Raw Chroma)</span>
+                        </label>
+                        <input type="range" class="form-range" id="boxAlgae" min="1.0" max="5.0" step="0.1" value="1.0">
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="./matrix-tracker.js"></script>
+</body>
+</html>
