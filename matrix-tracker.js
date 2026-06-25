@@ -4,35 +4,34 @@ const statusDiv = document.getElementById('status');
 
 let starBackgroundColors = Array.from({length: 50}, () => "#1a2c42");
 let rawWebcamImage = null;
-let activeVideoId = "oDCAAfOSqvA"; 
+let activeVideoId = "oDCAAfOSqvA";
 
 let currentMode = "proxy-latest";
 let zoomMode = false;
 
-let config = { 
+let config = {
     x: 0.505,       // 50.5%
     y: 0.609,       // 60.9%
     w: 0.018,       // 1.8%
     h: 0.155,       // 15.5%
     p: 2.25,        // 2.25x
-    cloud: 1.0, 
+    cloud: 1.0,
     algae: 1.0,
-    debug: false 
+    debug: false
 };
 
 // --- ARCHIVE CATALOG DATABASE DEFINITION ---
-// We map out the exact files that your archiver cron loops have committed to your repo folder.
 const archiveCatalog = {
     "2026-06-23": { totalImages: 1, baseHour: 10, intervalMinutes: 0 },
     "2026-06-24": { totalImages: 1, baseHour: 12, intervalMinutes: 0 },
-    "2026-06-25": { totalImages: 2, baseHour: 9, intervalMinutes: 45 } // Adjust tracking indices to match real snapshots
+    "2026-06-25": { totalImages: 6, baseHour: 9, intervalMinutes: 45 }
 };
 
-// Dynamically populate date choices on setup
+// Populate choices and balance initial states
 function initArchiveCatalogUI() {
     const dateSelect = document.getElementById('archiveDateSelect');
     dateSelect.innerHTML = "";
-    
+
     Object.keys(archiveCatalog).sort().reverse().forEach(dateStr => {
         const opt = document.createElement('option');
         opt.value = dateStr;
@@ -40,25 +39,27 @@ function initArchiveCatalogUI() {
         dateSelect.appendChild(opt);
     });
 
-    // Fire constraint adjustments on choice selection switches
     dateSelect.addEventListener('change', syncArchiveInputConstraints);
     document.getElementById('archiveIndexInput').addEventListener('input', updateEstimatedTimeReadout);
+
+    // Explicitly align initial interface look on bootup
+    handleSourceViewToggle(document.getElementById('sourceSelector').value);
 }
 
 function syncArchiveInputConstraints() {
     const chosenDate = document.getElementById('archiveDateSelect').value;
     const indexInput = document.getElementById('archiveIndexInput');
     const maxLabel = document.getElementById('maxAvailableLabel');
-    
+
     if (!chosenDate || !archiveCatalog[chosenDate]) return;
-    
+
     const count = archiveCatalog[chosenDate].totalImages;
     indexInput.max = count;
     if (parseInt(indexInput.value) > count) {
         indexInput.value = count;
     }
     maxLabel.textContent = `of ${count} available`;
-    
+
     updateEstimatedTimeReadout();
 }
 
@@ -66,21 +67,20 @@ function updateEstimatedTimeReadout() {
     const chosenDate = document.getElementById('archiveDateSelect').value;
     const index = parseInt(document.getElementById('archiveIndexInput').value) || 1;
     const metaBox = document.getElementById('archiveMetaDetails');
-    
+
     if (!chosenDate || !archiveCatalog[chosenDate]) {
         metaBox.style.display = 'none';
         return;
     }
-    
+
     const dayData = archiveCatalog[chosenDate];
-    // Formulate a sequential projection of snapshot capture timestamps
     let totalMinutes = (dayData.baseHour * 60) + dayData.intervalMinutes + ((index - 1) * 30);
     let hr = Math.floor(totalMinutes / 60);
     let min = totalMinutes % 60;
     let ampm = hr >= 12 ? 'PM' : 'AM';
     let displayHr = hr % 12 === 0 ? 12 : hr % 12;
     let displayMin = String(min).padStart(2, '0');
-    
+
     metaBox.style.display = 'block';
     metaBox.textContent = `⏰ Capture Time: ~ ${displayHr}:${displayMin} ${ampm} EDT`;
 }
@@ -88,22 +88,22 @@ function updateEstimatedTimeReadout() {
 function syncSlidersToConfig() {
     document.getElementById('boxX').value = config.x * 100;
     document.getElementById('valX').textContent = (config.x * 100).toFixed(1) + '%';
-    
+
     document.getElementById('boxY').value = config.y * 100;
     document.getElementById('valY').textContent = (config.y * 100).toFixed(1) + '%';
-    
+
     document.getElementById('boxW').value = config.w * 100;
     document.getElementById('valW').textContent = (config.w * 100).toFixed(1) + '%';
-    
+
     document.getElementById('boxH').value = config.h * 100;
     document.getElementById('valH').textContent = (config.h * 100).toFixed(1) + '%';
-    
+
     document.getElementById('boxP').value = config.p;
     document.getElementById('valP').textContent = config.p.toFixed(2) + 'x';
 
     document.getElementById('boxCloud').value = config.cloud;
     document.getElementById('boxAlgae').value = config.algae;
-    
+
     document.getElementById('toggleDebug').checked = config.debug;
 }
 
@@ -132,12 +132,12 @@ document.getElementById('toggleZoomMode').addEventListener('change', (e) => {
 
 const inputs = [
     { id: 'boxX', key: 'x', div: 'valX', mult: 0.01, unit: '%' },
-    { id: 'boxY', key: 'y', div: 'valY', mult: 0.01, unit: '%' },
-    { id: 'boxW', key: 'w', div: 'valW', mult: 0.01, unit: '%' },
-    { id: 'boxH', key: 'h', div: 'valH', mult: 0.01, unit: '%' },
-    { id: 'boxP', key: 'p', div: 'valP', mult: 1, unit: 'x' },
-    { id: 'boxCloud', key: 'cloud', div: 'valCloud', mult: 1, unit: 'x' },
-    { id: 'boxAlgae', key: 'algae', div: 'valAlgae', mult: 1, unit: 'x' }
+{ id: 'boxY', key: 'y', div: 'valY', mult: 0.01, unit: '%' },
+{ id: 'boxW', key: 'w', div: 'valW', mult: 0.01, unit: '%' },
+{ id: 'boxH', key: 'h', div: 'valH', mult: 0.01, unit: '%' },
+{ id: 'boxP', key: 'p', div: 'valP', mult: 1, unit: 'x' },
+{ id: 'boxCloud', key: 'cloud', div: 'valCloud', mult: 1, unit: 'x' },
+{ id: 'boxAlgae', key: 'algae', div: 'valAlgae', mult: 1, unit: 'x' }
 ];
 
 inputs.forEach(input => {
@@ -156,30 +156,36 @@ inputs.forEach(input => {
     });
 });
 
-document.getElementById('sourceSelector').addEventListener('change', (e) => {
-    const val = e.target.value;
+// Centralized layout visibility router logic
+function handleSourceViewToggle(val) {
     currentMode = val;
-    
     const archivePicker = document.getElementById('archivePickerContainer');
+    const youtubeContainer = document.getElementById('youtubeStreamContainer');
+
     if (val === 'archive-browse') {
         archivePicker.style.display = 'block';
+        youtubeContainer.style.display = 'none';
         document.getElementById('valSource').textContent = "📅 Historical Archive Mode";
         document.getElementById('valSource').className = "badge bg-info text-dark";
         syncArchiveInputConstraints();
         loadCustomArchiveTarget();
-    } else {
+    } else if (val === 'live') {
         archivePicker.style.display = 'none';
-        if (val === 'live') {
-            document.getElementById('valSource').textContent = "🔴 YT Preview Thumbnail";
-            document.getElementById('valSource').className = "badge bg-danger";
-            statusDiv.innerHTML = `⚠️ Static proxy layer mode active.`;
-            updateWebcamData();
-        } else if (val === 'proxy-latest') {
-            document.getElementById('valSource').textContent = "🟢 Custom Proxy (Latest)";
-            document.getElementById('valSource').className = "badge bg-success";
-            loadLatestProxyImage();
-        }
+        youtubeContainer.style.display = 'block';
+        document.getElementById('valSource').textContent = "🔴 YT Preview Thumbnail";
+        document.getElementById('valSource').className = "badge bg-danger";
+        updateWebcamData();
+    } else { // proxy-latest
+        archivePicker.style.display = 'none';
+        youtubeContainer.style.display = 'none';
+        document.getElementById('valSource').textContent = "🟢 Custom Proxy (Latest)";
+        document.getElementById('valSource').className = "badge bg-success";
+        loadLatestProxyImage();
     }
+}
+
+document.getElementById('sourceSelector').addEventListener('change', (e) => {
+    handleSourceViewToggle(e.target.value);
 });
 
 document.getElementById('loadArchiveBtn').addEventListener('click', loadCustomArchiveTarget);
@@ -189,18 +195,34 @@ function loadCustomArchiveTarget() {
     const chosenIndex = document.getElementById('archiveIndexInput').value;
     if (!chosenDate) return;
 
-    const targetedFile = `archive-${chosenDate}_${chosenIndex}.jpg`;
-    statusDiv.textContent = `Probing repo path for requested asset: ${targetedFile}...`;
+    const subfolderFile = `archive-${chosenDate}_${chosenIndex}.jpg`;
+    const rootFolderFile = `archive-${chosenDate}.jpg`; // Fallback layout tracking option
+
+    statusDiv.textContent = `Probing subfolder path: semiLivePics/${subfolderFile}...`;
 
     const img = new Image();
-    img.src = `./semiLivePics/${targetedFile}`;
+    img.src = `./semiLivePics/${subfolderFile}`;
+
     img.onload = function() {
         rawWebcamImage = img;
-        statusDiv.textContent = `Loaded historical snapshot file successfully: semiLivePics/${targetedFile}`;
+        statusDiv.textContent = `Loaded historical snapshot file successfully: semiLivePics/${subfolderFile}`;
         drawFlag();
     };
+
+    // Smart Fallback if the image doesn't exist in the semiLivePics folder
     img.onerror = function() {
-        statusDiv.innerHTML = `<span style="color: #f85149;">❌ Error: Asset './semiLivePics/${targetedFile}' not found.</span>`;
+        statusDiv.textContent = `Subfolder asset missing. Attempting root path lookup for: ${rootFolderFile}...`;
+        const fallbackImg = new Image();
+        fallbackImg.src = `./${rootFolderFile}`;
+
+        fallbackImg.onload = function() {
+            rawWebcamImage = fallbackImg;
+            statusDiv.textContent = `Loaded historical asset directly from root folder: ${rootFolderFile}`;
+            drawFlag();
+        };
+        fallbackImg.onerror = function() {
+            statusDiv.innerHTML = `<span style="color: #f85149;">❌ Error: Neither path contained an image matching the target string keys.</span>`;
+        };
     };
 }
 
@@ -275,7 +297,7 @@ function updateWebcamData() {
     if (currentMode !== "live") return;
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = `/api/live-frame?vid=${encodeURIComponent(activeVideoId)}&nocache=true&time=${Date.now()}`; 
+    img.src = `/api/live-frame?vid=${encodeURIComponent(activeVideoId)}&nocache=true&time=${Date.now()}`;
     img.onload = function() {
         if (currentMode !== "live") return;
         rawWebcamImage = img;
@@ -286,7 +308,7 @@ function updateWebcamData() {
 function loadLatestProxyImage() {
     if (currentMode !== "proxy-latest") return;
     statusDiv.textContent = "Scanning for the latest daytime proxy frame layer...";
-    
+
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
@@ -317,7 +339,7 @@ function loadLatestProxyImage() {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-        
+
         const fallbackImg = new Image();
         fallbackImg.src = `./semiLivePics/archive-${yesterdayStr}_1.jpg`;
         fallbackImg.onload = function() {
@@ -337,7 +359,7 @@ function get50StarColorsFromTrapezoid(sCtx, imgW, imgH) {
     const targetH = imgH * config.h;
 
     for (let row = 1; row <= 9; row++) {
-        const progress = (row - 1) / 8; 
+        const progress = (row - 1) / 8;
         const currentRowWidth = targetW * (1 + progress * (config.p - 1));
         const widthDifference = currentRowWidth - targetW;
         const rowStartX = baseStartX - (widthDifference / 2);
@@ -379,7 +401,7 @@ function drawActualStar(cx, cy, spikes, outerRadius, innerRadius) {
 
 function drawFlag() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     if (rawWebcamImage) {
         const sampleCanvas = document.createElement('canvas');
         sampleCanvas.width = rawWebcamImage.width;
@@ -396,10 +418,10 @@ function drawFlag() {
         const sourceHeight = rawWebcamImage.height * config.h;
 
         ctx.drawImage(
-            rawWebcamImage, 
-            Math.max(0, sourceX), Math.max(0, sourceY), 
-            Math.min(rawWebcamImage.width, sourceWidth), Math.min(rawWebcamImage.height, sourceHeight),
-            0, 0, canvas.width, canvas.height
+            rawWebcamImage,
+            Math.max(0, sourceX), Math.max(0, sourceY),
+                      Math.min(rawWebcamImage.width, sourceWidth), Math.min(rawWebcamImage.height, sourceHeight),
+                      0, 0, canvas.width, canvas.height
         );
         return;
     }
